@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherQuest</title>
+    <!-- Use Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #0d1117;
+            --container-bg: rgba(22, 27, 34, 0.7);
+            --border-color: rgba(60, 65, 72, 0.5);
+            --text-color: #c9d1d9;
+            --header-color: #58a6ff;
+            --success-color: #238636;
+            --error-color: #ff7b72;
+            --button-bg: #21262d;
+            --button-border: #30363d;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container, .solver-container {
+            backdrop-filter: blur(10px);
+            background: rgba(22, 27, 34, 0.7);
+            border-radius: 12px;
+            border: 1px solid rgba(60, 65, 72, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .solver-container {
+            display: none; /* Initially hidden */
+        }
+        
+        h1 {
+            color: var(--header-color);
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        #riddle-text {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        #encrypted-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: rgba(45, 50, 60, 0.5);
+            border: 1px solid rgba(60, 65, 72, 0.5);
+            display: inline-block;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        
+        #user-input, .solver-input {
+            width: 80%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(60, 65, 72, 0.5);
+            background: #0d1117;
+            color: #c9d1d9;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        #user-input:focus, .solver-input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .button-group {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            background: #21262d;
+            color: #c9d1d9;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: rgba(33, 38, 45, 0.8);
+            border-color: #58a6ff;
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        #solveBtn {
+            background: #8e44ad;
+            border-color: #9b59b6;
+        }
+
+        #solveBtn:hover {
+            box-shadow: 0 0 10px #9b59b6;
+        }
+
+        #openSolverBtn {
+            background: #e67e22;
+            border-color: #f39c12;
+        }
+
+        #openSolverBtn:hover {
+            box-shadow: 0 0 10px #f39c12;
+        }
+        
+        #nextLevelBtn {
+            display: none;
+            background: #238636;
+            border-color: #238636;
+        }
+
+        #nextLevelBtn:hover {
+            box-shadow: 0 0 10px #238636;
+        }
+        
+        #feedback-message {
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 1.1em;
+            min-height: 25px; /* Prevent layout shift */
+        }
+        
+        .correct {
+            color: #238636;
+            text-shadow: 0 0 5px #238636;
+        }
+
+        .incorrect {
+            color: #ff7b72;
+            text-shadow: 0 0 5px #ff7b72;
+        }
+
+        /* New element for step-by-step feedback */
+        #step-by-step-text {
+            font-size: 1em;
+            color: #b0c4de;
+            margin-top: 15px;
+            min-height: 20px;
+        }
+
+        /* End Game Message */
+        #end-game-message {
+            display: none;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #58a6ff;
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #58a6ff; }
+            to { text-shadow: 0 0 15px #58a6ff, 0 0 20px #58a6ff; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>CipherQuest</h1>
+        <p id="riddle-text"></p>
+        <p id="encrypted-text"></p>
+        <input type="text" id="user-input" placeholder="Type your answer here">
+        
+        <div class="button-group">
+            <button id="submitBtn">Submit</button>
+            <button id="solveBtn">Solve</button>
+            <button id="openSolverBtn">Open Solver</button>
+            <button id="nextLevelBtn">Next Level</button>
+        </div>
+        
+        <p id="feedback-message"></p>
+        <p id="step-by-step-text"></p>
+        <p id="end-game-message">Congratulations! You have completed all levels!</p>
+    </div>
+
+    <div class="solver-container">
+        <h1>Cipher Solver</h1>
+        <p>Solve your own problem.</p>
+        
+        <label for="solver-text">Enter your text (uppercase letters only):</label>
+        <input type="text" id="solver-text" class="solver-input">
+
+        <label for="solver-shift">Enter shift number (-25 to 25):</label>
+        <input type="number" id="solver-shift" class="solver-input" min="-25" max="25" value="1">
+        
+        <div class="button-group">
+            <button id="solver-solve-btn">Solve</button>
+        </div>
+        
+        <p id="solver-step-by-step-text"></p>
+        <p id="solver-final-text"></p>
+        <div class="button-group">
+            <button id="backToGameBtn">Back to Game</button>
+        </div>
+    </div>
+
+    <script>
+        const levels = [
+            {
+                riddle: "I am an encrypted message, a simple substitution where each letter is shifted three places forward in the alphabet.",
+                solution: "I GREET!",
+                cipher: "Caesar"
+            },
+            {
+                riddle: "This one is also a Caesar, but the shift is five places backward.",
+                solution: "C SQUIRREL!",
+                cipher: "Caesar"
+            },
+            {
+                riddle: "I have a head and a tail, but no body. What am I?",
+                solution: "COIN",
+                cipher: "Caesar"
+            },
+            {
+                riddle: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
+                solution: "ECHO",
+                cipher: "Caesar"
+            },
+            {
+                riddle: "I get bigger the more you take away. What am I?",
+                solution: "A HOLE",
+                cipher: "Caesar"
+            },
+            {
+                riddle: "What belongs to you, but other people use it more than you do?",
+                solution: "YOUR NAME",
+                cipher: "Caesar"
+            },
+            {
+                riddle: "What has many teeth but cannot bite?",
+                solution: "A COMB",
+                cipher: "Caesar"
+            }
+        ];
+
+        let currentLevelIndex = 0;
+        const maxLevels = levels.length;
+        let shuffledLevels = [];
+        let currentLevel = {};
+        let currentSolution = '';
+
+        const gameContainer = document.querySelector('.game-container');
+        const solverContainer = document.querySelector('.solver-container');
+        const riddleText = document.getElementById('riddle-text');
+        const encryptedText = document.getElementById('encrypted-text');
+        const userInput = document.getElementById('user-input');
+        const submitBtn = document.getElementById('submitBtn');
+        const solveBtn = document.getElementById('solveBtn');
+        const openSolverBtn = document.getElementById('openSolverBtn');
+        const nextLevelBtn = document.getElementById('nextLevelBtn');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const stepByStepText = document.getElementById('step-by-step-text');
+        const endGameMessage = document.getElementById('end-game-message');
+
+        const solverText = document.getElementById('solver-text');
+        const solverShift = document.getElementById('solver-shift');
+        const solverSolveBtn = document.getElementById('solver-solve-btn');
+        const solverStepByStepText = document.getElementById('solver-step-by-step-text');
+        const solverFinalText = document.getElementById('solver-final-text');
+        const backToGameBtn = document.getElementById('backToGameBtn');
+
+        // Fisher-Yates shuffle algorithm to randomize the levels array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Function to encrypt a message using a Caesar cipher with a given shift
+        function caesarEncrypt(text, shift) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char >= 'A' && char <= 'Z') {
+                    const start = 'A'.charCodeAt(0);
+                    const newCode = (char.charCodeAt(0) - start + shift) % 26;
+                    result += String.fromCharCode(start + newCode);
+                } else {
+                    result += char;
+                }
+            }
+            return result;
+        }
+
+        // Function to decrypt a message using a Caesar cipher with a given shift
+        function caesarDecrypt(text, shift) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char >= 'A' && char <= 'Z') {
+                    const start = 'A'.charCodeAt(0);
+                    const newCode = (char.charCodeAt(0) - start - shift + 26) % 26;
+                    result += String.fromCharCode(start + newCode);
+                } else {
+                    result += char;
+                }
+            }
+            return result;
+        }
+
+        function generateRandomLevel() {
+            if (currentLevelIndex >= shuffledLevels.length) {
+                endGame();
+                return;
+            }
+            const baseLevel = shuffledLevels[currentLevelIndex];
+            currentLevel = { ...baseLevel }; // Create a copy of the level object
+            
+            if (currentLevel.cipher === "Caesar") {
+                const randomShift = Math.floor(Math.random() * 25) + 1; // 1 to 25
+                currentLevel.encryptedMessage = caesarEncrypt(currentLevel.solution, randomShift);
+                currentLevel.riddle = `I am an encrypted message, a simple substitution where each letter is shifted ${randomShift} places forward in the alphabet.`;
+                currentLevel.shift = randomShift; // Store the shift value for the step-by-step solver
+            } else {
+                currentLevel.shift = 0; // Default for non-Caesar ciphers
+            }
+        }
+
+        function initGame() {
+            // Shuffle the levels at the start of each new game
+            shuffledLevels = [...levels]; // Create a new array to shuffle
+            shuffleArray(shuffledLevels);
+            
+            currentLevelIndex = 0;
+            loadGameLevel();
+            
+            // Show all game elements and hide end game message
+            gameContainer.style.display = 'block';
+            solverContainer.style.display = 'none';
+
+            riddleText.style.display = 'block';
+            encryptedText.style.display = 'inline-block';
+            userInput.style.display = 'inline-block';
+            submitBtn.style.display = 'inline-block';
+            solveBtn.style.display = 'inline-block';
+            openSolverBtn.style.display = 'inline-block';
+            nextLevelBtn.style.display = 'none';
+            endGameMessage.style.display = 'none';
+            
+            userInput.disabled = false;
+        }
+
+        function loadGameLevel() {
+            generateRandomLevel();
+            riddleText.textContent = currentLevel.riddle;
+            encryptedText.textContent = currentLevel.encryptedMessage;
+            userInput.value = '';
+            feedbackMessage.textContent = '';
+            stepByStepText.textContent = ''; // Clear the step-by-step text
+            
+            nextLevelBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-block';
+            solveBtn.style.display = 'inline-block';
+            openSolverBtn.style.display = 'inline-block';
+            userInput.disabled = false;
+        }
+
+        function checkAnswer() {
+            const userGuess = userInput.value.trim().toUpperCase();
+            
+            if (userGuess === currentLevel.solution) {
+                feedbackMessage.textContent = 'Correct!';
+                feedbackMessage.className = 'correct';
+                nextLevelBtn.style.display = 'inline-block';
+                submitBtn.style.display = 'none';
+                solveBtn.style.display = 'none';
+                openSolverBtn.style.display = 'none';
+                userInput.disabled = true;
+                nextLevelBtn.textContent = 'Next Level';
+            } else {
+                feedbackMessage.textContent = 'Incorrect, try again!';
+                feedbackMessage.className = 'incorrect';
+            }
+        }
+
+        function solveLevel() {
+            userInput.value = currentLevel.solution;
+            checkAnswer();
+        }
+
+        function nextLevel() {
+            currentLevelIndex++;
+            if (currentLevelIndex < maxLevels) {
+                loadGameLevel();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            riddleText.style.display = 'none';
+            encryptedText.style.display = 'none';
+            userInput.style.display = 'none';
+            submitBtn.style.display = 'none';
+            solveBtn.style.display = 'none';
+            openSolverBtn.style.display = 'none';
+            nextLevelBtn.style.display = 'inline-block';
+            nextLevelBtn.textContent = 'Play Again';
+            feedbackMessage.style.display = 'none';
+            stepByStepText.style.display = 'none';
+            endGameMessage.style.display = 'block';
+        }
+
+        function showSolver() {
+            gameContainer.style.display = 'none';
+            solverContainer.style.display = 'block';
+            solverStepByStepText.textContent = '';
+            solverFinalText.textContent = '';
+            backToGameBtn.style.display = 'inline-block';
+        }
+
+        function backToGame() {
+            gameContainer.style.display = 'block';
+            solverContainer.style.display = 'none';
+        }
+
+        function stepByStepSolve() {
+            // New logic for the solver screen
+            const inputText = solverText.value.trim().toUpperCase();
+            const shiftValue = parseInt(solverShift.value);
+
+            if (!inputText || isNaN(shiftValue)) {
+                solverStepByStepText.textContent = 'Invalid input. Please provide text and a valid shift number.';
+                return;
+            }
+
+            solverSolveBtn.disabled = true;
+            backToGameBtn.disabled = true;
+            solverStepByStepText.textContent = '';
+            solverFinalText.textContent = '';
+
+            let decryptedText = '';
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < inputText.length) {
+                    const encryptedChar = inputText[i];
+                    let decryptedChar = encryptedChar;
+
+                    if (encryptedChar >= 'A' && encryptedChar <= 'Z') {
+                        const start = 'A'.charCodeAt(0);
+                        const newCode = (encryptedChar.charCodeAt(0) - start - shiftValue + 26) % 26;
+                        decryptedChar = String.fromCharCode(start + newCode);
+                        solverStepByStepText.textContent = `${encryptedChar} (Encrypted) -> ${decryptedChar} (Decrypted) with a shift of -${shiftValue}`;
+                    } else {
+                        solverStepByStepText.textContent = `Processing special character: '${encryptedChar}'`;
+                    }
+                    
+                    decryptedText += decryptedChar;
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    solverStepByStepText.textContent = 'Decryption complete!';
+                    solverFinalText.textContent = `Final Answer: ${decryptedText}`;
+                    solverSolveBtn.disabled = false;
+                    backToGameBtn.disabled = false;
+                }
+            }, 500);
+        }
+
+        // Event Listeners
+        submitBtn.addEventListener('click', checkAnswer);
+        nextLevelBtn.addEventListener('click', () => {
+            if (nextLevelBtn.textContent === 'Play Again') {
+                initGame();
+            } else {
+                nextLevel();
+            }
+        });
+        solveBtn.addEventListener('click', solveLevel);
+        openSolverBtn.addEventListener('click', showSolver);
+        solverSolveBtn.addEventListener('click', stepByStepSolve);
+        backToGameBtn.addEventListener('click', backToGame);
+
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+
+</body>
+</html>
